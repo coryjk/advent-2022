@@ -34,3 +34,20 @@ func SumInts(nums *[]int) int {
 func EuclideanMod(a, b int) int {
 	return (a%b + b) % b
 }
+
+func Intersection[V comparable](set1 []V, set2 []V) []V {
+	present := make(map[V]bool)
+	intersection := make([]V, 0)
+
+	for _, element := range set1 {
+		present[element] = true
+	}
+
+	for _, element := range set2 {
+		if present[element] {
+			intersection = append(intersection, element)
+		}
+	}
+
+	return intersection
+}
