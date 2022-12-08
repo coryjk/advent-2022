@@ -45,10 +45,10 @@ func day7Part2(input *[]string) string {
 	findDirsForDeletion(root, 0)
 
 	// flatten all dirs
-	dirs, usedSpace := flattenDirs(root), root.size
+	dirs := flattenDirs(root)
 
-	// current unused space
-	unusedSpace := totalSpace - usedSpace
+	// current unused space, root size calculated during `findDirsForDeletion`
+	unusedSpace := totalSpace - root.size
 
 	// find the smallest single dir that may be deleted to acheive desired space
 	var smallestDirToDelete *file = nil
