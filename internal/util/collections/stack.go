@@ -45,6 +45,10 @@ func (s *Stack) Peek() interface{} {
 	return s.dll.Back().Value
 }
 
+func (s *Stack) Len() int {
+	return s.dll.Len()
+}
+
 func (s *Stack) String(toString func(x interface{}) string) string {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

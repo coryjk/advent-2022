@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/coryjk/advent/internal/util/collections"
 )
 
 func Day7() {
@@ -24,19 +26,11 @@ type file struct {
 }
 
 func day7Part1(input *[]string) string {
-	// init root
-	root := file{
-		name:     "/",
-		parent:   nil,
-		children: list.New(),
-		size:     0,
-	}
-
 	// populate file structure based on stdout
-	crawl(&root, input)
+	root := crawl(input)
 
 	// find deletion dirs and their sum sizes
-	dirsForDeletion, _ := findDirsForDeletion(&root, 100000)
+	dirsForDeletion, _ := findDirsForDeletion(root, 100000)
 	size := 0
 	for _, dirs := range *dirsForDeletion {
 		size += dirs.size
@@ -45,10 +39,42 @@ func day7Part1(input *[]string) string {
 }
 
 func day7Part2(input *[]string) string {
-	return ""
+	root, requiredUnusedSpace, totalSpace := crawl(input), 30000000, 70000000
+
+	// reuse previous function to just populate all file sizes
+	findDirsForDeletion(root, 0)
+
+	// flatten all dirs
+	dirs, usedSpace := flattenDirs(root), root.size
+
+	// current unused space
+	unusedSpace := totalSpace - usedSpace
+
+	// find the smallest single dir that may be deleted to acheive desired space
+	var smallestDirToDelete *file = nil
+	for _, dir := range *dirs {
+		potentialUnusedSpace := unusedSpace + dir.size
+
+		// if requirement met, replace min with current if it is smaller
+		if potentialUnusedSpace >= requiredUnusedSpace {
+			if smallestDirToDelete == nil || dir.size < smallestDirToDelete.size {
+				smallestDirToDelete = dir
+			}
+		}
+	}
+
+	return strconv.Itoa(smallestDirToDelete.size)
 }
 
-func crawl(root *file, stdout *[]string) {
+func crawl(stdout *[]string) *file {
+	// init root
+	root := &file{
+		name:     "/",
+		parent:   nil,
+		children: list.New(),
+		size:     0,
+	}
+
 	current := root
 	for i, line := range *stdout {
 		// skip i == 0 since root already initialized
@@ -99,6 +125,8 @@ func crawl(root *file, stdout *[]string) {
 			}
 		}
 	}
+
+	return root
 }
 
 func newFile(name string, parent *file, size int) *file {
@@ -142,4 +170,34 @@ func findDirsForDeletion(current *file, max int) (*[]*file, int) {
 		}
 		return &dirsForDeletion, sum
 	}
+}
+
+func flattenDirs(root *file) *[]*file {
+	stack, usedSpace := collections.NewStack(), 0
+	var dirs []*file
+
+	// init stack with root
+	stack.Push(root)
+
+	for stack.Len() > 0 {
+		current := stack.Pop().(*file)
+
+		// assumption: only dirs have children
+		for i := current.children.Front(); i != nil; i = i.Next() {
+			node := i.Value.(*file)
+
+			// continue iteration
+			stack.Push(node)
+
+			// only append if it is a dir (has children)
+			if node.children.Len() > 0 {
+				dirs = append(dirs, node)
+
+				// size of files already accounted for in dirs
+				usedSpace += node.size
+			}
+		}
+	}
+
+	return &dirs
 }
